@@ -7,10 +7,10 @@ import java.util.TreeSet;
  */
 public class FixedSizePriorityQueue<E extends Comparable<E>> extends TreeSet<E> {
 
-    private int elementsLeft;
+    private int maxSize;
 
     public FixedSizePriorityQueue(int maxSize) {
-        this.elementsLeft = maxSize;
+        this.maxSize = maxSize;
     }
 
     /**
@@ -18,26 +18,21 @@ public class FixedSizePriorityQueue<E extends Comparable<E>> extends TreeSet<E> 
      * */
     @Override
     public boolean add(E e) {
-        if (elementsLeft == 0 && size() == 0) {
+        if (maxSize == 0 && size() == 0) {
             // max size was initiated to zero => just return false
             return false;
-        } else if (elementsLeft > 0) {
-            // queue isn't full => add element and decrement elementsLeft
-            boolean added = super.add(e);
-            if (added) {
-                elementsLeft--;
-            }
-            return added;
+        } else if (size() < maxSize) {
+            // queue isn't full => add element
+            return super.add(e);
         } else {
             // there is already 1 or more elements => compare to the least
-            boolean less = e.compareTo(this.last()) < 0;
-            if (less) {
-                // new element is less than the largest in queue => pull the largest and add new one to queue
-                pollLast();
+            if (e.compareTo(this.first()) > 0) {
+                // new element is greater than the smallest in queue => pull the smallest and add new one to queue
+                pollFirst();
                 super.add(e);
                 return true;
             } else {
-                // new element is greater than the largest in queue => return false
+                // new element is less than the smallest in queue => return false
                 return false;
             }
         }

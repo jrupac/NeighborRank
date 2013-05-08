@@ -22,6 +22,11 @@ import java.util.*;
  */
 public class NNDescent {
     private static double getCosineSimilarity(IndexReader reader, int doc1, int doc2) {
+        // Don't want doc being a neighbor of itself
+        if (doc1 == doc2) {
+            return 0.0;
+        }
+
         Set<String> terms = new HashSet<String>();
         Map<String, Integer> f1 = null;
         Map<String, Integer> f2 = null;
@@ -128,12 +133,9 @@ public class NNDescent {
 
         for (int i = 0; i < N; i++) {
             neighborLists.add(new FixedSizePriorityQueue<Neighbor>(K));
-            // TODO: This is not great, but a node shouldn't sample itself. Or can it?
-            docIds.set(i, rand.nextInt(0, N - 1));
             for (Object neighbor : rand.nextSample(docIds, K)) {
-                neighborLists.get(i).add(new Neighbor((Integer) neighbor, Double.POSITIVE_INFINITY));
+                neighborLists.get(i).add(new Neighbor((Integer) neighbor, Double.NEGATIVE_INFINITY));
             }
-            docIds.set(i, i);
         }
 
         while (true) {
