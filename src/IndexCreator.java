@@ -21,6 +21,15 @@ import java.util.Scanner;
  * Usage: java IndexCreator </path/to/parsed/data/> </path/to/index/>
  */
 public class IndexCreator {
+    static {
+        TextField.TYPE_STORED.setIndexed(true);
+        TextField.TYPE_STORED.setTokenized(true);
+        TextField.TYPE_STORED.setStored(true);
+        TextField.TYPE_STORED.setStoreTermVectors(true);
+        TextField.TYPE_STORED.setStoreTermVectorPositions(false);
+        TextField.TYPE_STORED.freeze();
+    }
+
     public static void main(String[] args) {
         Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_43);
 
