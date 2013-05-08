@@ -2,6 +2,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -21,15 +22,6 @@ import java.util.Scanner;
  * Usage: java IndexCreator </path/to/parsed/data/> </path/to/index/>
  */
 public class IndexCreator {
-    static {
-        TextField.TYPE_STORED.setIndexed(true);
-        TextField.TYPE_STORED.setTokenized(true);
-        TextField.TYPE_STORED.setStored(true);
-        TextField.TYPE_STORED.setStoreTermVectors(true);
-        TextField.TYPE_STORED.setStoreTermVectorPositions(false);
-        TextField.TYPE_STORED.freeze();
-    }
-
     public static void main(String[] args) {
         Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_43);
 
@@ -75,8 +67,8 @@ public class IndexCreator {
                 if (!s.hasNext())
                     continue;
                 String summary = s.nextLine();
-                doc.add(new Field("title", title, TextField.TYPE_STORED));
-                doc.add(new Field("summary", summary, TextField.TYPE_STORED));
+                doc.add(new Field("title", title, VectorTextField.TYPE_STORED));
+                doc.add(new Field("summary", summary, VectorTextField.TYPE_STORED));
 
                 try {
                     iwriter.addDocument(doc);
