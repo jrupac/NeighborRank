@@ -21,6 +21,8 @@ import java.util.*;
  * Usage: java NNDescent </path/to/index/> K
  */
 public class NNDescent {
+    private static final double DELTA = 0.05;
+
     private static double getCosineSimilarity(IndexReader reader, int doc1, int doc2) {
         // Don't want doc being a neighbor of itself
         if (doc1 == doc2) {
@@ -108,7 +110,7 @@ public class NNDescent {
             else if (this.sim > n.sim)
                 return 1;
             else
-                return 0;
+                return this.id - n.id;
         }
     }
 
@@ -122,7 +124,8 @@ public class NNDescent {
             return;
         }
 
-        int N = reader.maxDoc();
+        int N = reader.maxDoc() / 100;
+        int threshold = (int) (DELTA * N * K);
 
         List<Integer> docIds = new ArrayList<Integer>(N);
         for (int i = 0; i < N; i++) {
@@ -163,7 +166,8 @@ public class NNDescent {
                 }
             }
 
-            if (counter == 0) {
+            System.out.println(counter);
+            if (counter < threshold) {
                 break;
             }
         }

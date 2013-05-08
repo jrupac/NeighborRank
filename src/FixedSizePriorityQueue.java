@@ -28,9 +28,12 @@ public class FixedSizePriorityQueue<E extends Comparable<E>> extends TreeSet<E> 
             // there is already 1 or more elements => compare to the least
             if (e.compareTo(this.first()) > 0) {
                 // new element is greater than the smallest in queue => pull the smallest and add new one to queue
-                pollFirst();
-                super.add(e);
-                return true;
+                if (super.add(e)) {
+                    pollFirst();
+                    return true;
+                } else {
+                    return false;
+                }
             } else {
                 // new element is less than the smallest in queue => return false
                 return false;
