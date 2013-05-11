@@ -1,0 +1,110 @@
+/* Put your CSS here */
+
+@import url(http://fonts.googleapis.com/css?family=Open+Sans:400,700);
+
+html, body {
+	background: #EEE;
+	color: white;
+	font-family: 'Open Sans', Sans;
+	height: 100%;
+}
+
+#wrap {
+	min-height: 100%;
+	height: auto !important;
+	height: 100%;
+	margin: 0 auto -25px;
+}
+
+#push, #footer {
+	height: 25px;
+}
+
+#footer {
+	border-top: 1px solid #1D73BA;
+	background-color: #2388DB;
+	vertical-align: middle;
+	text-align: center;
+	color: white;
+}
+
+div.title-info {
+	padding-top: 3%;
+	background-color: #2388DB;
+	width: 100%;
+	margin: 0 auto;
+
+	padding-bottom: 5px;
+}
+
+.title-info h1 {
+	font-weight: 700;
+	padding-left: 20%;
+	font-size: 72px;
+	text-align: left;
+	margin-bottom: 19px;
+}
+
+.title-info .subtitle {
+	font-weight: 400;
+	text-align:left;
+	padding-left:20%
+}
+
+.divider {
+	width: 60%;
+	margin: auto;
+	border-top: none;
+	border-bottom: 1px solid #1D73BA;
+	background-color: #2388DB;
+}
+
+.title-info .authors {
+	font-weight: 400;
+	line-height:30px;
+	padding-right: 20%;
+	font-size: 20px;
+	text-align: right;
+	margin-top: 15px;
+}
+
+.search-box {
+	padding-top: 20px;
+	padding-bottom: 20px;
+	background-color: #2388DB;
+	width: 100%;
+	text-align: center;
+	margin: 0 auto;
+	margin-bottom: 20px;
+	border-bottom: 1px solid #1D73BA;
+}
+
+.instructions {
+	padding-left: 20%;
+	color: black;
+}
+
+.search-results {
+	width: 60%;
+	margin: 0 auto;
+	padding-bottom: 10px;
+}
+
+.table td.select {
+	width: 20px;
+	vertical-align: middle;
+}
+
+.result {
+	color: black;
+}
+
+.result-title {
+	font-size: 16px;
+	font-weight: 700;
+}
+
+.result-summary {
+	font-weight: 400;
+	font-size: 12px;
+}
