@@ -33,9 +33,9 @@ App.ResultsController = Ember.ArrayController.extend({
     query: function(query, K, M) {
         if (query === undefined) { return; }
         _this = this;
-	    $.getJSON(
+	    $.post(
 	        "http://localhost:8080/results/",
-	        {'query': query, 'K': K, 'M': M}
+	        JSON.stringify({'query': query, 'K': K, 'M': M})
         ).done(this.process).fail(function (x,y) {
             console.log('here!')
         });

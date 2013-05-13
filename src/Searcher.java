@@ -13,51 +13,44 @@ import org.apache.lucene.util.Version;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Basic search client to test that index was created.
  *
- * Usage: java IndexSearcher </path/to/index/>
+ * Usage: java Searcher </path/to/index/> <query>
  */
 public class Searcher {
-    public static void search(Analyzer analyzer, Directory directory) {
-        // Now search the index:
-        DirectoryReader ireader = null;
+
+    private static final Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_43);
+    private static final QueryParser parser = new QueryParser(Version.LUCENE_43, "summary", analyzer);
+
+    private static Directory directory;
+    private static DirectoryReader ireader;
+    private static IndexSearcher isearcher;
+
+    public static void setIndex(String indexPath) {
+        // Load index from disk:
+        File indexFile = new File(indexPath);
+        try {
+            directory = FSDirectory.open(indexFile);
+        } catch (IOException e) {
+            System.err.println("FATAL: Cannot open index file. Exiting");
+            return;
+        }
+
         try {
             ireader = DirectoryReader.open(directory);
         } catch (IOException e) {
             System.err.println("FATAL: Could not open the directory for reading. Exiting.");
             return;
         }
-        IndexSearcher isearcher = new IndexSearcher(ireader);
-        // Parse a simple query that searches for "text":
-        QueryParser parser = new QueryParser(Version.LUCENE_43, "summary", analyzer);
-        Query query = null;
-        try {
-            query = parser.parse("quantum");
-        } catch (ParseException e) {
-            System.err.println("ERROR: Cannot parse query.");
-            return;
-        }
-        ScoreDoc[] hits = new ScoreDoc[0];
-        try {
-            hits = isearcher.search(query, null, 1000).scoreDocs;
-        } catch (IOException e) {
-            System.err.println("ERROR: Failed to execute search.");
-        }
-        // assertEquals(1, hits.length);
-        // Iterate through the results:
-        for (int i = 0; i < hits.length; i++) {
-            try {
-                Document hitDoc = isearcher.doc(hits[i].doc);
-                System.out.println(hitDoc.get("title"));
-                System.out.println("\t" + hitDoc.get("summary"));
-            } catch (IOException e) {
-                System.err.println("ERROR: Failed to convert search result to document.");
-            }
-            // assertEquals("This is the text to be indexed.", hitDoc.get("fieldname"));
-        }
 
+        isearcher = new IndexSearcher(ireader);
+    }
+
+    public static void closeIndex() {
         try {
             ireader.close();
             directory.close();
@@ -66,19 +59,42 @@ public class Searcher {
         }
     }
 
-    public static void main(String[] args) {
-        Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_43);
+    public static List<Doc> search(String text, int M) {
+        List<Doc> results = new ArrayList<Doc>();
 
-        // Load index from disk:
-        File indexFile = new File(args[0]);
-        Directory directory = null;
+        // Parse a simple query that searches for "text":
+        Query query = null;
         try {
-            directory = FSDirectory.open(indexFile);
+            query = parser.parse(text);
+        } catch (ParseException e) {
+            System.err.println("ERROR: Cannot parse query.");
+            return results;
+        }
+        ScoreDoc[] hits = new ScoreDoc[0];
+        try {
+            hits = isearcher.search(query, M).scoreDocs;
         } catch (IOException e) {
-            System.err.println("FATAL: Cannot open index file. Exiting");
-            return;
+            System.err.println("ERROR: Failed to execute search.");
         }
 
-        Searcher.search(analyzer, directory);
+        // Iterate through the results:
+        for (int i = 0; i < hits.length; i++) {
+            try {
+                Document hitDoc = isearcher.doc(hits[i].doc);
+                System.out.println(hitDoc.get("title"));
+                System.out.println("\t" + hitDoc.get("summary"));
+                results.add(new Doc(hits[i].doc, hitDoc.get("title"), hitDoc.get("summary")));
+            } catch (IOException e) {
+                System.err.println("ERROR: Failed to convert search result to document.");
+            }
+            // assertEquals("This is the text to be indexed.", hitDoc.get("fieldname"));
+        }
+
+        return results;
+    }
+
+    public static void main(String[] args) {
+        Searcher.setIndex(args[0]);
+        Searcher.search(args[1], 100);
     }
 }

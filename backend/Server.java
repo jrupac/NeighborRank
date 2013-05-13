@@ -2,16 +2,29 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
+import net.minidev.json.parser.ParseException;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.concurrent.Executors;
 
+/**
+ * API server.
+ *
+ * Usage: java Server </path/to/index/>
+ */
 public class Server {
+
     public static void main(String args[]) throws IOException {
         InetSocketAddress addr = new InetSocketAddress(8080);
         HttpServer server = HttpServer.create(addr, 0);
+
+        Searcher.setIndex(args[0]);
 
         server.createContext("/results", new ResultsHandler());
         server.setExecutor(Executors.newCachedThreadPool());
@@ -22,6 +35,8 @@ public class Server {
 
 class ResultsHandler implements HttpHandler {
 
+    private static final JSONParser PARSER = new JSONParser(JSONParser.MODE_JSON_SIMPLE);
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String uri = exchange.getRequestURI().getPath();
@@ -30,10 +45,60 @@ class ResultsHandler implements HttpHandler {
 
         Headers responseHeader = exchange.getResponseHeaders();
 
-        java.util.Scanner s = new java.util.Scanner(exchange.getRequestBody()).useDelimiter("\\A");
-        System.err.println( s.hasNext() ? s.next() : "");
+        responseHeader.set("Content-Type", "application/json");
+        responseHeader.set("Access-Control-Allow-Origin", "*");
 
-        String content =
+        OutputStream response = exchange.getResponseBody();
+
+        String content = "";
+        Object object = null;
+        try {
+            object = PARSER.parse(exchange.getRequestBody());
+        } catch (ParseException e) {
+            System.err.println(e.getMessage());
+        }
+        if (!(object instanceof JSONObject)) {
+            exchange.sendResponseHeaders(200, content.length());
+            response.close();
+            return;
+        }
+
+        JSONObject map = (JSONObject) object;
+
+        String query = (String) map.get("query");
+
+        Object mObject = map.get("M");
+        int M = 0;
+        if (mObject instanceof Number) {
+            M = ((Number) mObject).intValue();
+        } else if (mObject instanceof String) {
+            M = Integer.parseInt((String) mObject);
+        }
+
+        Object kObject = map.get("K");
+        int K = 0;
+        if (mObject instanceof Number) {
+            K = ((Number) mObject).intValue();
+        } else if (mObject instanceof String) {
+            K = Integer.parseInt((String) mObject);
+        }
+
+        List<Doc> results = Searcher.search(query, M);
+
+        JSONArray resultsArray = new JSONArray();
+
+        for (Doc d : results) {
+            JSONObject docObj = new JSONObject();
+            docObj.put("docid", d.getId());
+            docObj.put("title", d.getTitle());
+            docObj.put("summary", d.getSummary());
+            resultsArray.add(docObj);
+        }
+
+        JSONObject responseObject = new JSONObject();
+        responseObject.put("results", resultsArray);
+
+        content =
                 "{" +
                         "    \"results\": [{\n" +
                         "    \"docid\": 1,\n" +
@@ -67,11 +132,9 @@ class ResultsHandler implements HttpHandler {
                 "}" +
                 "]}";
 
-        responseHeader.set("Content-Type", "application/json");
-        responseHeader.set("Access-Control-Allow-Origin", "*");
+        content = responseObject.toString();
 
         exchange.sendResponseHeaders(200, content.length());
-        OutputStream response = exchange.getResponseBody();
         response.write(content.getBytes());
         response.close();
     }
