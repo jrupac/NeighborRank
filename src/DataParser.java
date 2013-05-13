@@ -105,5 +105,11 @@ public class DataParser {
                 inEntry = false;
             }
         }
+
+        @Override
+        public void endDocument() throws SAXException {
+            printWriter.flush();
+            printWriter.close();
+        }
     }
 }

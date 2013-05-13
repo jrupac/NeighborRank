@@ -1,8 +1,5 @@
 import cern.colt.map.OpenIntDoubleHashMap;
 import cern.colt.map.OpenIntObjectHashMap;
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexReader;
@@ -12,20 +9,15 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.io.*;
+import java.util.*;
 
 /**
  * An implementation of the naive NN-Descent algorithm from the paper.
  *
  * Some credit to: http://stackoverflow.com/questions/1844194/get-cosine-similarity-between-two-documents-in-lucene
  *
- * Usage: java NNDescent </path/to/index/> K
+ * Usage: java NNDescent </path/to/index/> </path/to/output/file> K
  */
 public class NNDescent {
     private static final double DELTA = 0.05;
@@ -34,7 +26,10 @@ public class NNDescent {
             OpenIntDoubleHashMap();
     private static final OpenIntObjectHashMap cachedTermFreqs = new
             OpenIntObjectHashMap();
-    private static int NN;
+    private static final Random rand = new Random(System.nanoTime());
+
+    private static int N;
+    private static DirectoryReader reader;
 
     /**
      * Variation of Carmack's Fast Inverse Square Root for double-precision
@@ -51,6 +46,7 @@ public class NNDescent {
         return x;
     }
 
+    @SuppressWarnings(value = "unchecked")
     private static double getCosineSimilarity(IndexReader reader, int doc1, int doc2) {
         // Don't want doc being a neighbor of itself
         if (doc1 == doc2) {
@@ -60,12 +56,12 @@ public class NNDescent {
         Double cached = null;
 
         if (doc1 < doc2) {
-            if (cachedSims.containsKey((doc1) * NN + (doc2))) {
-                cached = cachedSims.get((doc1) * NN + (doc2));
+            if (cachedSims.containsKey((doc1) * N + (doc2))) {
+                cached = cachedSims.get((doc1) * N + (doc2));
             }
         } else {
-            if (cachedSims.containsKey((doc2) * NN + (doc1))) {
-                cached = cachedSims.get((doc2) * NN + (doc1));
+            if (cachedSims.containsKey((doc2) * N + (doc1))) {
+                cached = cachedSims.get((doc2) * N + (doc1));
             }
         }
 
@@ -132,9 +128,9 @@ public class NNDescent {
         double sim = dotProduct * invSqrt(v1Norm * v2Norm);
 
         if (doc1 < doc2) {
-            cachedSims.put((doc1) * NN + (doc2), sim);
+            cachedSims.put((doc1) * N + (doc2), sim);
         } else {
-            cachedSims.put((doc2) * NN + (doc1), sim);
+            cachedSims.put((doc2) * N + (doc1), sim);
         }
 
         return sim;
@@ -158,17 +154,7 @@ public class NNDescent {
         }
     }
 
-    private static RealVector toRealVector(Map<String, Integer> map, Set<String> terms) {
-        RealVector vector = new ArrayRealVector(terms.size());
-        int i = 0;
-        for (String term : terms) {
-            int value = map.containsKey(term) ? map.get(term) : 0;
-            vector.setEntry(i++, value);
-        }
-        return (RealVector) vector.mapDivide(vector.getL1Norm());
-    }
-
-    private static List<List<Integer>> reverse(List<FixedSizePriorityQueue<Neighbor>> neighborLists) {
+    private static List<List<Integer>> reverse(List<Set<Neighbor>> neighborLists) {
         int N = neighborLists.size();
         List<List<Integer>> reversedLists = new ArrayList<List<Integer>>(N);
         for (int i = 0; i < N; i++) {
@@ -176,7 +162,7 @@ public class NNDescent {
         }
 
         for (int i = 0; i < N; i++) {
-            FixedSizePriorityQueue<Neighbor> neighbors = neighborLists.get(i);
+            Set<Neighbor> neighbors = neighborLists.get(i);
             for (Neighbor n : neighbors) {
                 reversedLists.get(n.id).add(i);
             }
@@ -205,32 +191,59 @@ public class NNDescent {
         }
     }
 
-    public static void run(/*Analyzer analyzer, */Directory directory, int K) {
+    public static void setIndex(String indexPath) {
+        Directory directory = null;
+        try {
+            directory = FSDirectory.open(new File(indexPath));
+        } catch (IOException e) {
+            System.err.println("FATAL: Cannot open index file. Exiting");
+            return;
+        }
+
         // Open the index:
-        DirectoryReader reader = null;
         try {
             reader = DirectoryReader.open(directory);
         } catch (IOException e) {
             System.err.println("FATAL: Could not open the directory for reading. Exiting.");
             return;
         }
+    }
 
-        int N = reader.maxDoc() / 100;
-        NN = N;
+    /**
+     * Shuffle the first K elements of arr
+     * @param arr
+     * @param K
+     */
+    private static void shuffle(int[] arr, int K) {
+        for (int i = 0; i < K; i++) {
+            int index = i + rand.nextInt(arr.length - i);
+            int temp = arr[i];
+            arr[i] = arr[index];
+            arr[index] = temp;
+        }
+    }
+
+    public static List<Set<Neighbor>> run(int K) {
+        N = reader.maxDoc();
+
         int threshold = (int) (DELTA * N * K);
 
         List<Integer> docIds = new ArrayList<Integer>(N);
+        int[] shuffledIds = new int[N];
         for (int i = 0; i < N; i++) {
             docIds.add(i);
+            shuffledIds[i] = i;
         }
-        RandomDataGenerator rand = new RandomDataGenerator();
-        List<FixedSizePriorityQueue<Neighbor>> neighborLists = new ArrayList<FixedSizePriorityQueue<Neighbor>>(N);
+
+        List<Set<Neighbor>> neighborLists = new ArrayList<Set<Neighbor>>(N);
 
         // B[v] <- Sample(V, K) x {infty}
         for (int i = 0; i < N; i++) {
             neighborLists.add(new FixedSizePriorityQueue<Neighbor>(K));
-            for (Object neighbor : rand.nextSample(docIds, K)) {
-                neighborLists.get(i).add(new Neighbor((Integer) neighbor, Double.NEGATIVE_INFINITY));
+            shuffle(shuffledIds, K);
+
+            for (int j = 0; j < K; j++) {
+                neighborLists.get(i).add(new Neighbor(shuffledIds[j], Double.NEGATIVE_INFINITY));
             }
         }
 
@@ -275,23 +288,39 @@ public class NNDescent {
             }
         }
 
-        // TODO: Return instead of break.
+        return neighborLists;
+
         // TODO: Test this.
     }
 
-    public static void main(String[] args) {
-        // Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_43);
+    private static void writeResults(List<Set<Neighbor>> neighborLists, File outputFile, int N, int K) throws IOException {
+        PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(outputFile)));
 
-        // Load index from disk:
-        File indexFile = new File(args[0]);
-        Directory directory = null;
-        try {
-            directory = FSDirectory.open(indexFile);
-        } catch (IOException e) {
-            System.err.println("FATAL: Cannot open index file. Exiting");
-            return;
+        out.println(N + " " + K);
+
+        for (Set<Neighbor> nnList : neighborLists) {
+            for (Neighbor n : nnList) {
+                out.print(n.id + " ");
+            }
+            out.println();
         }
 
-        NNDescent.run(/*analyzer, */directory, Integer.parseInt(args[1]));
+        out.flush();
+    }
+
+    public static void main(String[] args) {
+
+        // Load index from disk:
+        setIndex(args[0]);
+        File outputFile = new File(args[1]);
+        int K = Integer.parseInt(args[2]);
+
+        List<Set<Neighbor>> neighbors = run(K);
+
+        try {
+            writeResults(neighbors, outputFile, neighbors.size(), K);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
