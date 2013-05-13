@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>NeighborRank</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+	<link rel="stylesheet" href="css/normalize.css">
+	<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+	<script type="text/x-handlebars">
+	{{outlet}}
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="search">
+
+	{{#if model}}
+		<div class="alert alert-info instructions">
+			Select the results below which you find relevant:
+		</div>
+
+		<div class="search-results">
+			<table class="table table-hover">
+					{{#each item in model}}
+						<tr class="result">
+						<td class="select">
+								<input type="checkbox" {{action "toggleRelevance" item.id}}/>
+						</td>
+						<td>					
+								<p class="result-title">{{item.title}}</p>
+								<p class="result-summary">{{item.summary}}</p>
+	
+						</td>
+						</tr>
+					{{/each}}
+			</table>
+			<div style="margin:auto; text-align:right">
+			<button class="btn btn-medium btn-inverse" type="button" {{action "sendRelevant"}}>
+				Compare with NN-Descent &rarr;
+			</button>
+			</div>
+		</div>
+	{{/if}}
+	</script>
+
+</body>
+</html>

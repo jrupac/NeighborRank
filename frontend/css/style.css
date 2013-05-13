@@ -9,25 +9,6 @@ html, body {
 	height: 100%;
 }
 
-#wrap {
-	min-height: 100%;
-	height: auto !important;
-	height: 100%;
-	margin: 0 auto -25px;
-}
-
-#push, #footer {
-	height: 25px;
-}
-
-#footer {
-	border-top: 1px solid #1D73BA;
-	background-color: #2388DB;
-	vertical-align: middle;
-	text-align: center;
-	color: white;
-}
-
 div.title-info {
 	padding-top: 3%;
 	background-color: #2388DB;
