@@ -80,7 +80,7 @@
 
     <div class="search-comparison-results">
         <div class="table-comparison">
-        <div class=table-comparison-header>K=0</div>
+        <div class=table-comparison-header>K={{App.FullLuceneResultsController.K}}</div>
         <table class="table">
             {{#each item in App.FullLuceneResultsController}}
             <tr {{bindAttr class=":result item.relevanceClass"}}>
@@ -94,7 +94,7 @@
         </div>
 
         <div class="table-comparison">
-        <div class=table-comparison-header>K=5</div>
+        <div class=table-comparison-header>K={{App.MixedResultsController.K}}</div>
         <table class="table">
             {{#each item in App.MixedResultsController}}
             <tr {{bindAttr class=":result item.relevanceClass"}}>
@@ -108,7 +108,7 @@
         </div>
 
         <div class="table-comparison">
-        <div class=table-comparison-header>K=30</div>
+        <div class=table-comparison-header>K={{App.FullNNResultsController.K}}</div>
         <table class="table">
             {{#each item in App.FullNNResultsController}}
             <tr {{bindAttr class=":result item.relevanceClass"}}>

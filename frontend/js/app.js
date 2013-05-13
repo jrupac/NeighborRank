@@ -35,27 +35,32 @@ App.ResultsController = Ember.ArrayController.extend({
         _this = this;
 	    $.post(
 	        "http://localhost:8080/results/",
-	        JSON.stringify({'query': query, 'K': K, 'M': M})
-        ).done(this.process).fail(function (x,y) {
-            console.log('here!')
-        });
+	        JSON.stringify({'query': query, 'K': K, 'M': M}))
+	     .done(this.process)
+	     .fail(this.fail);
+    },
+    fail: function(x, y) {
+        console.log('here');
     }
 });
 
 App.FullLuceneResultsController = App.ResultsController.create({
     content: [],
+    K: 0,
+    M: 30,
     process: function(response) {
         App.FullLuceneResultsController.clear();
         console.log('here1');
         response.results.forEach(function(child) {
             App.FullLuceneResultsController.pushObject(App.Result.create(child));
         })
-        console.log(JSON.stringify(_this.content));
     }
 });
 
 App.MixedResultsController = App.ResultsController.create({
     content: [],
+    K: 5,
+    M: 6,
     process: function(response) {
         console.log(this);
         App.MixedResultsController.clear();
@@ -69,6 +74,8 @@ App.MixedResultsController = App.ResultsController.create({
 
 App.FullNNResultsController = App.ResultsController.create({
     content: [],
+    K: 29,
+    M: 1,
     process: function(response) {
         App.FullNNResultsController.clear();
         console.log('here1');
@@ -139,16 +146,18 @@ App.IndexController = Ember.Controller.extend({
 	},
 	doSearch: function() {
 	    console.log("getting stuff... for " + this.query);
-	    App.FullLuceneResultsController.query(this.query, 0, 30);
+	    App.FullLuceneResultsController.query(this.query,
+	        App.FullLuceneResultsController.K,
+	        App.FullLuceneResultsController.M);
 	},
 	doComparison: function() {
 	    console.log("doing comparison...");
-	    App.FullNNResultsController.query(this.query, 29, 1);
-	    App.MixedResultsController.query(this.query, 5, 6);
-
-	    console.log(this.query);
-	    console.log(App.MixedResultsController.content);
-	    console.log(App.FullNNResultsController.content);
+	    App.FullNNResultsController.query(this.query,
+	        App.FullNNResultsController.K,
+	        App.FullNNResultsController.M);
+	    App.MixedResultsController.query(this.query,
+	        App.MixedResultsController.K,
+	        App.MixedResultsController.M);
 	    App.set('comparing', true);
 	}
 });
