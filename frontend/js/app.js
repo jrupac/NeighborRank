@@ -20,34 +20,63 @@ App.Result = Ember.Object.extend({
     docid: null,
     title: null,
     summary: null,
+    relevanceClass: function() {
+        if (App.relevant.contains(this.docid)) {
+            return 'relevant';
+        } else {
+            return null;
+        }
+    }.property(this.docid)
 });
 
-App.ResultController = Ember.ArrayController.extend({
+App.ResultsController = Ember.ArrayController.extend({
     query: function(query, K, M) {
         if (query === undefined) { return; }
         _this = this;
 	    $.getJSON(
 	        "http://localhost:8080/results/",
 	        {'query': query, 'K': K, 'M': M}
-        ).done(function (response) {
-            console.log('here1');
-            response.results.forEach(function(child) {
-                _this.content.pushObject(App.Result.create(child));
-            })
-        }).fail(function (x,y) {console.log('here!')});
+        ).done(this.process).fail(function (x,y) {
+            console.log('here!')
+        });
     }
 });
 
-App.FullLucenceResultsController = App.ResultController.create({
-    content: []
+App.FullLuceneResultsController = App.ResultsController.create({
+    content: [],
+    process: function(response) {
+        App.FullLuceneResultsController.clear();
+        console.log('here1');
+        response.results.forEach(function(child) {
+            App.FullLuceneResultsController.pushObject(App.Result.create(child));
+        })
+        console.log(JSON.stringify(_this.content));
+    }
 });
 
-App.MixResultsController = App.ResultController.create({
-    content: []
+App.MixedResultsController = App.ResultsController.create({
+    content: [],
+    process: function(response) {
+        console.log(this);
+        App.MixedResultsController.clear();
+        console.log('here1');
+        response.results.forEach(function(child) {
+            App.MixedResultsController.pushObject(App.Result.create(child));
+        })
+        console.log(JSON.stringify(_this.content));
+    }
 });
 
-App.FullNNResultsController = App.ResultController.create({
-    content: []
+App.FullNNResultsController = App.ResultsController.create({
+    content: [],
+    process: function(response) {
+        App.FullNNResultsController.clear();
+        console.log('here1');
+        response.results.forEach(function(child) {
+            App.FullNNResultsController.pushObject(App.Result.create(child));
+        })
+        console.log(JSON.stringify(_this.content));
+    }
 });
 
 //
@@ -100,8 +129,6 @@ App.IndexView = Ember.View.extend({
 
 App.IndexController = Ember.Controller.extend({
 	query: '',
-	searchResults: Em.A(),
-	fullLuceneResults: Em.A(),
 	toggleRelevance: function(id) {
         rels = App.get('relevant');
         if (rels.contains(id)) {
@@ -112,12 +139,16 @@ App.IndexController = Ember.Controller.extend({
 	},
 	doSearch: function() {
 	    console.log("getting stuff... for " + this.query);
-	    App.FullLucenceResultsController.query(this.query, 0, 30);
+	    App.FullLuceneResultsController.query(this.query, 0, 30);
 	},
 	doComparison: function() {
-	    App.set('comparing', true);
-	    console.log(this.query);
-	    App.MixResultsController.query(this.query, 5, 6);
+	    console.log("doing comparison...");
 	    App.FullNNResultsController.query(this.query, 29, 1);
+	    App.MixedResultsController.query(this.query, 5, 6);
+
+	    console.log(this.query);
+	    console.log(App.MixedResultsController.content);
+	    console.log(App.FullNNResultsController.content);
+	    App.set('comparing', true);
 	}
 });

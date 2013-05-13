@@ -40,14 +40,14 @@
     </div>
 
 
-    {{#if App.FullLucenceResultsController}}
+    {{#if App.FullLuceneResultsController}}
     <div class="alert alert-info instructions">
         Select the results below which you find relevant:
     </div>
 
     <div class="search-results">
         <table class="table table-hover">
-            {{#each item in App.FullLucenceResultsController}}
+            {{#each item in App.FullLuceneResultsController}}
             <tr class="result">
                 <td class="select">
                     {{view view.resultCheckbox
@@ -74,59 +74,53 @@
     {{/if}}
 
     {{#if App.comparing}}
-    {{#if App.FullLucenceResultsController}}
     <div class="alert alert-info instructions" style="margin-top: 20px">
-        Blah blah blah
+        K is the number of nearest neighbors expanded in each vector model result.
     </div>
 
     <div class="search-comparison-results">
-        <table class="table table-comparison">
-            {{#collection App.ResultsCollectionView
-            contentBinding="App.FullLucenceResultsController"}}
-
-            <tr
-            {{bindAttr class=":result view.relevanceClass"}}>
+        <div class="table-comparison">
+        <div class=table-comparison-header>K=0</div>
+        <table class="table">
+            {{#each item in App.FullLuceneResultsController}}
+            <tr {{bindAttr class=":result item.relevanceClass"}}>
             <td>
-                <p class="result-title">{{view.content.title}}</p>
-
-                <p class="result-summary">{{view.content.summary}}</p>
-
+                <p class="result-title">{{item.title}}</p>
+                <p class="result-summary">{{item.summary}}</p>
             </td>
             </tr>
-            {{/collection}}
+            {{/each}}
         </table>
+        </div>
 
-        <table class="table table-comparison">
-            {{#collection App.ResultsCollectionView contentBinding="App.FullLucenceResultsController"}}
-
-            <tr
-            {{bindAttr class=":result view.relevanceClass"}}>
+        <div class="table-comparison">
+        <div class=table-comparison-header>K=5</div>
+        <table class="table">
+            {{#each item in App.MixedResultsController}}
+            <tr {{bindAttr class=":result item.relevanceClass"}}>
             <td>
-                <p class="result-title">{{view.content.title}}</p>
-
-                <p class="result-summary">{{view.content.summary}}</p>
-
+                <p class="result-title">{{item.title}}</p>
+                <p class="result-summary">{{item.summary}}</p>
             </td>
             </tr>
-            {{/collection}}
+            {{/each}}
         </table>
+        </div>
 
-        <table class="table table-comparison">
-            {{#collection App.ResultsCollectionView contentBinding="App.FullLucenceResultsController"}}
-
-            <tr
-            {{bindAttr class=":result view.relevanceClass"}}>
+        <div class="table-comparison">
+        <div class=table-comparison-header>K=30</div>
+        <table class="table">
+            {{#each item in App.FullNNResultsController}}
+            <tr {{bindAttr class=":result item.relevanceClass"}}>
             <td>
-                <p class="result-title">{{view.content.title}}</p>
-
-                <p class="result-summary">{{view.content.summary}}</p>
-
+                <p class="result-title">{{item.title}}</p>
+                <p class="result-summary">{{item.summary}}</p>
             </td>
             </tr>
-            {{/collection}}
+            {{/each}}
         </table>
+        </div>
     </div>
-    {{/if}}
     {{/if}}
 
 </script>
