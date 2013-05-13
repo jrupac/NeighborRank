@@ -35,8 +35,9 @@ App.ResultsController = Ember.ArrayController.extend({
         _this = this;
 	    $.post(
 	        "http://localhost:8080/results/",
-	        JSON.stringify({'query': query, 'K': K, 'M': M}))
-	     .done(this.process)
+	        JSON.stringify({'query': query, 'K': K, 'M': M}),
+	        this.process,
+	        'json')
 	     .fail(this.fail);
     },
     fail: function(x, y) {
@@ -47,10 +48,10 @@ App.ResultsController = Ember.ArrayController.extend({
 App.FullLuceneResultsController = App.ResultsController.create({
     content: [],
     K: 0,
-    M: 30,
+    M: 10,
     process: function(response) {
         App.FullLuceneResultsController.clear();
-        console.log('here1');
+        console.log(response);
         response.results.forEach(function(child) {
             App.FullLuceneResultsController.pushObject(App.Result.create(child));
         })
@@ -60,29 +61,25 @@ App.FullLuceneResultsController = App.ResultsController.create({
 App.MixedResultsController = App.ResultsController.create({
     content: [],
     K: 5,
-    M: 6,
+    M: 2,
     process: function(response) {
         console.log(this);
         App.MixedResultsController.clear();
-        console.log('here1');
         response.results.forEach(function(child) {
             App.MixedResultsController.pushObject(App.Result.create(child));
         })
-        console.log(JSON.stringify(_this.content));
     }
 });
 
 App.FullNNResultsController = App.ResultsController.create({
     content: [],
-    K: 29,
+    K: 9,
     M: 1,
     process: function(response) {
         App.FullNNResultsController.clear();
-        console.log('here1');
         response.results.forEach(function(child) {
             App.FullNNResultsController.pushObject(App.Result.create(child));
         })
-        console.log(JSON.stringify(_this.content));
     }
 });
 
