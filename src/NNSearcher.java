@@ -53,6 +53,7 @@ public class NNSearcher {
         }
     }
 
+    // Get list of docs with IDs, titles, and summaries
     public static List<Doc> getNeighbors(int doc) {
         List<Doc> neighbors = new ArrayList<Doc>(K);
 
@@ -67,9 +68,6 @@ public class NNSearcher {
             }
 
             neighbors.add(new Doc(id, d.get("title"), d.get("summary")));
-            System.out.print("Neighbor: ");
-            System.out.println(d.get("title"));
-            System.out.println("\t" + d.get("summary"));
         }
 
         return neighbors;

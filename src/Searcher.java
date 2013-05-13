@@ -81,8 +81,6 @@ public class Searcher {
         for (int i = 0; i < hits.length; i++) {
             try {
                 Document hitDoc = isearcher.doc(hits[i].doc);
-                System.out.println(hitDoc.get("title"));
-                System.out.println("\t" + hitDoc.get("summary"));
                 results.add(new Doc(hits[i].doc, hitDoc.get("title"), hitDoc.get("summary")));
             } catch (IOException e) {
                 System.err.println("ERROR: Failed to convert search result to document.");
