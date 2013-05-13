@@ -95,3 +95,20 @@ div.title-info {
 	font-weight: 400;
 	font-size: 12px;
 }
+
+.search-comparison-results {
+    width: 95%;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    margin: 0 auto;
+}
+
+.table-comparison {
+    float:left;
+    width:30%;
+    margin: 10px;
+}
+
+.relevant {
+    background-color: lightBlue;
+}

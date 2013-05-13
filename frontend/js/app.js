@@ -1,5 +1,7 @@
 App = Ember.Application.create({
-	LOG_TRANSITIONS: true
+	LOG_TRANSITIONS: true,
+	comparing: false,
+	relevant: new Ember.Set(),
 });
 
 Ember.TextSupport.reopen({
@@ -15,23 +17,37 @@ App.Searchbox = Ember.TextField.extend({
 
 // Result model
 App.Result = Ember.Object.extend({
+    docid: null,
+    title: null,
+    summary: null,
 });
 
-App.Result.reopenClass({
-    all: function(query) {
+App.ResultController = Ember.ArrayController.extend({
+    query: function(query, K, M) {
         if (query === undefined) { return; }
-
-        var results = Em.A();
-	    $.getJSON("http://localhost:8080/results/" + query,
-	        function (response) {
-                response.results.forEach(function(child) {
-                    results.addObject(App.Result.create(child));
-                });
-	        }).error(function (x, y, z) {
-	            console.log(JSON.stringify(x) + " " + y + " " + z);
-	        });
-	    return results;
+        _this = this;
+	    $.getJSON(
+	        "http://localhost:8080/results/",
+	        {'query': query, 'K': K, 'M': M}
+        ).done(function (response) {
+            console.log('here1');
+            response.results.forEach(function(child) {
+                _this.content.pushObject(App.Result.create(child));
+            })
+        }).fail(function (x,y) {console.log('here!')});
     }
+});
+
+App.FullLucenceResultsController = App.ResultController.create({
+    content: []
+});
+
+App.MixResultsController = App.ResultController.create({
+    content: []
+});
+
+App.FullNNResultsController = App.ResultController.create({
+    content: []
 });
 
 //
@@ -58,8 +74,19 @@ App.Result.reopenClass({
 
 App.Router.map(function() {
     this.route('index', { path: '/'});
-	this.route('search', { path: 'search/:query/:rels' });
 });
+
+
+App.ResultsCollectionView = Ember.CollectionView.extend({
+    itemViewClass: Ember.View.extend({
+        relevanceClass: function() {
+            if (App.relevant.contains(this.get('content.docid'))) {
+                return 'relevant';
+            } else { return null; }
+        }.property('content.docid')
+    })
+});
+
 
 App.IndexView = Ember.View.extend({
     resultCheckbox: Ember.Checkbox.extend({
@@ -73,9 +100,10 @@ App.IndexView = Ember.View.extend({
 
 App.IndexController = Ember.Controller.extend({
 	query: '',
-	relevant: new Ember.Set(),
+	searchResults: Em.A(),
+	fullLuceneResults: Em.A(),
 	toggleRelevance: function(id) {
-        rels = this.get('relevant');
+        rels = App.get('relevant');
         if (rels.contains(id)) {
             rels.remove(id);
         } else {
@@ -83,31 +111,13 @@ App.IndexController = Ember.Controller.extend({
         }
 	},
 	doSearch: function() {
-	    console.log("getting stuff...");
-	    console.log(this.get('model'));
-	    this.set('model', App.Result.all(this.get('query')));
+	    console.log("getting stuff... for " + this.query);
+	    App.FullLucenceResultsController.query(this.query, 0, 30);
 	},
-	sendRelevant: function() {
-	    relIds = this.get('relevant').toArray();
-	    this.transitionToRoute('search', { query: this.get("query"), rels: relIds });
+	doComparison: function() {
+	    App.set('comparing', true);
+	    console.log(this.query);
+	    App.MixResultsController.query(this.query, 5, 6);
+	    App.FullNNResultsController.query(this.query, 29, 1);
 	}
-});
-
-App.IndexRoute = Ember.Route.extend({
-    model: function() {
-        return App.Result.all();
-    }
-});
-
-App.SearchRoute = Ember.Route.extend({
-    serialize: function(params, context) {
-        return params;
-    },
-    model: function(params) {
-        console.log(params.query);
-        return App.Result.all(params.query);
-    },
-    setupController: function(controller, model) {
-        //controller.set("model", App.Result.all(model.get('query')));
-    }
 });

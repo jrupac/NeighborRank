@@ -1,98 +1,135 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="utf-8">
-	<title>NeighborRank</title>
+    <meta charset="utf-8">
+    <title>NeighborRank</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
-	<link rel="stylesheet" href="css/normalize.css">
-	<link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <script type="text/x-handlebars">
+<script type="text/x-handlebars">
     {{outlet}}
-  </script>
+</script>
 
-	<div class="title-info">
-		<h1>NeighborRank</h1>
-		<h2 class="subtitle">
-			An analysis of hybrid ranking schemes
-		</h2>
+<div class="title-info">
+    <h1>NeighborRank</h1>
 
-		<h2 class="authors">
-			COS 435 Final Project <br />	
-			Rafi Shamim and Ajay Roopakalu
-		</h2>
+    <h2 class="subtitle">
+        An analysis of hybrid ranking schemes
+    </h2>
 
-		<hr class="divider" />
-	</div>
+    <h2 class="authors">
+        COS 435 Final Project <br/>
+        Rafi Shamim and Ajay Roopakalu
+    </h2>
 
-  <script type="text/x-handlebars" data-template-name="index">
+    <hr class="divider"/>
+</div>
 
-	<div class="search-box">
-		<div class="input-append">
-		  {{view App.Searchbox valueBinding="query" class="span6"}}
-		  <button class="btn btn-inverse" type="button" {{action "doSearch"}}>Search</button>
-		</div>
-	</div>
+<script type="text/x-handlebars" data-template-name="index">
 
-
-        {{#if model}}
-        <div class="alert alert-info instructions">
-            Select the results below which you find relevant:
+    <div class="search-box">
+        <div class="input-append">
+            {{view App.Searchbox valueBinding="query" class="span6"}}
+            <button class="btn btn-inverse" type="button"
+            {{action "doSearch"}}>Search</button>
         </div>
+    </div>
 
-        <div class="search-results">
-            <table class="table table-hover">
-                {{#each item in model}}
-                <tr class="result">
-                    <td class="select">
-                        {{view view.resultCheckbox
-                        contentBinding="item"
-                        controllerBinding="this"
-                        checkedBinding="index.view.checked"}}
-                    </td>
-                    <td>
-                        <p class="result-title">{{item.title}}</p>
-                        <p class="result-summary">{{item.summary}}</p>
 
-                    </td>
-                </tr>
-                {{/each}}
-            </table>
-            <div style="margin:auto; text-align:right">
-                <button class="btn btn-medium btn-inverse" type="button" {{action "sendRelevant"}}>
-                Compare with NN-Descent &rarr;
-                </button>
-            </div>
+    {{#if App.FullLucenceResultsController}}
+    <div class="alert alert-info instructions">
+        Select the results below which you find relevant:
+    </div>
+
+    <div class="search-results">
+        <table class="table table-hover">
+            {{#each item in App.FullLucenceResultsController}}
+            <tr class="result">
+                <td class="select">
+                    {{view view.resultCheckbox
+                    contentBinding="item"
+                    controllerBinding="this"
+                    checkedBinding="index.view.checked"}}
+                </td>
+                <td>
+                    <p class="result-title">{{item.title}}</p>
+
+                    <p class="result-summary">{{item.summary}}</p>
+
+                </td>
+            </tr>
+            {{/each}}
+        </table>
+        <div style="margin:auto; text-align:right">
+            <button class="btn btn-medium btn-inverse" type="button"
+            {{action "doComparison"}}>
+            Compare with NN-Descent &rarr;
+            </button>
         </div>
-        {{/if}}
+    </div>
+    {{/if}}
 
-	</script>
+    {{#if App.comparing}}
+    {{#if App.FullLucenceResultsController}}
+    <div class="alert alert-info instructions" style="margin-top: 20px">
+        Blah blah blah
+    </div>
 
-    <script type="text/x-handlebars" data-template-name="search">
+    <div class="search-comparison-results">
+        <table class="table table-comparison">
+            {{#collection App.ResultsCollectionView
+            contentBinding="App.FullLucenceResultsController"}}
 
-      {{#if model}}
-      <div class="alert alert-info instructions" style="margin-top: 20px">
-          Blah blah blah
-      </div>
+            <tr
+            {{bindAttr class=":result view.relevanceClass"}}>
+            <td>
+                <p class="result-title">{{view.content.title}}</p>
 
-      <div class="search-results">
-          <table class="table table-hover">
-              {{#each item in model}}
-              <tr class="result">
-                  <td>
-                      <p class="result-title">{{item.title}}</p>
-                      <p class="result-summary">{{item.summary}}</p>
+                <p class="result-summary">{{view.content.summary}}</p>
 
-                  </td>
-              </tr>
-              {{/each}}
-          </table>
-      </div>
-      {{/if}}
-    </script>
+            </td>
+            </tr>
+            {{/collection}}
+        </table>
+
+        <table class="table table-comparison">
+            {{#collection App.ResultsCollectionView contentBinding="App.FullLucenceResultsController"}}
+
+            <tr
+            {{bindAttr class=":result view.relevanceClass"}}>
+            <td>
+                <p class="result-title">{{view.content.title}}</p>
+
+                <p class="result-summary">{{view.content.summary}}</p>
+
+            </td>
+            </tr>
+            {{/collection}}
+        </table>
+
+        <table class="table table-comparison">
+            {{#collection App.ResultsCollectionView contentBinding="App.FullLucenceResultsController"}}
+
+            <tr
+            {{bindAttr class=":result view.relevanceClass"}}>
+            <td>
+                <p class="result-title">{{view.content.title}}</p>
+
+                <p class="result-summary">{{view.content.summary}}</p>
+
+            </td>
+            </tr>
+            {{/collection}}
+        </table>
+    </div>
+    {{/if}}
+    {{/if}}
+
+</script>
 
 
 <script src="js/libs/jquery-1.9.1.js"></script>
