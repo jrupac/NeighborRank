@@ -44,6 +44,7 @@ public class NNSearcher {
         N = scan.nextInt();
         K = scan.nextInt();
 
+        NNDescent.setN(N);
         nnList = new int[N][K];
 
         for (int i = 0; i < N; i++) {
@@ -51,6 +52,8 @@ public class NNSearcher {
                 nnList[i][j] = scan.nextInt();
             }
         }
+
+        scan.close();
     }
 
     // Get list of docs with IDs, titles, and summaries

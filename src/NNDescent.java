@@ -29,7 +29,6 @@ public class NNDescent {
     private static final Random rand = new Random(System.nanoTime());
 
     private static int N;
-    private static DirectoryReader reader;
 
     /**
      * Variation of Carmack's Fast Inverse Square Root for double-precision
@@ -46,8 +45,12 @@ public class NNDescent {
         return x;
     }
 
+    public static void setN(int n) {
+        N = n;
+    }
+
     @SuppressWarnings(value = "unchecked")
-    private static double getCosineSimilarity(IndexReader reader, int doc1, int doc2) {
+    public static double getCosineSimilarity(IndexReader reader, int doc1, int doc2) {
         // Don't want doc being a neighbor of itself
         if (doc1 == doc2) {
             return 0.0;
@@ -154,7 +157,7 @@ public class NNDescent {
         }
     }
 
-    private static List<List<Integer>> reverse(List<Set<Neighbor>> neighborLists) {
+    private static List<List<Integer>> reverse(List<FixedSizePriorityQueue<Neighbor>> neighborLists) {
         int N = neighborLists.size();
         List<List<Integer>> reversedLists = new ArrayList<List<Integer>>(N);
         for (int i = 0; i < N; i++) {
@@ -162,7 +165,7 @@ public class NNDescent {
         }
 
         for (int i = 0; i < N; i++) {
-            Set<Neighbor> neighbors = neighborLists.get(i);
+            FixedSizePriorityQueue<Neighbor> neighbors = neighborLists.get(i);
             for (Neighbor n : neighbors) {
                 reversedLists.get(n.id).add(i);
             }
@@ -191,24 +194,6 @@ public class NNDescent {
         }
     }
 
-    public static void setIndex(String indexPath) {
-        Directory directory = null;
-        try {
-            directory = FSDirectory.open(new File(indexPath));
-        } catch (IOException e) {
-            System.err.println("FATAL: Cannot open index file. Exiting");
-            return;
-        }
-
-        // Open the index:
-        try {
-            reader = DirectoryReader.open(directory);
-        } catch (IOException e) {
-            System.err.println("FATAL: Could not open the directory for reading. Exiting.");
-            return;
-        }
-    }
-
     /**
      * Shuffle the first K elements of arr
      * @param arr
@@ -223,8 +208,8 @@ public class NNDescent {
         }
     }
 
-    public static List<Set<Neighbor>> run(int K) {
-        N = reader.maxDoc();
+    public static List<FixedSizePriorityQueue<Neighbor>> run(IndexReader reader, int K) {
+        setN(reader.maxDoc());
 
         int threshold = (int) (DELTA * N * K);
 
@@ -235,7 +220,7 @@ public class NNDescent {
             shuffledIds[i] = i;
         }
 
-        List<Set<Neighbor>> neighborLists = new ArrayList<Set<Neighbor>>(N);
+        List<FixedSizePriorityQueue<Neighbor>> neighborLists = new ArrayList<FixedSizePriorityQueue<Neighbor>>(N);
 
         // B[v] <- Sample(V, K) x {infty}
         for (int i = 0; i < N; i++) {
@@ -293,13 +278,14 @@ public class NNDescent {
         // TODO: Test this.
     }
 
-    private static void writeResults(List<Set<Neighbor>> neighborLists, File outputFile, int N, int K) throws IOException {
+    private static void writeResults(List<FixedSizePriorityQueue<Neighbor>> neighborLists,
+                                     File outputFile, int N, int K) throws IOException {
         PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(outputFile)));
 
         out.println(N + " " + K);
 
-        for (Set<Neighbor> nnList : neighborLists) {
-            for (Neighbor n : nnList) {
+        for (FixedSizePriorityQueue<Neighbor> nnList : neighborLists) {
+            for (Neighbor n : nnList.descendingSet()) {
                 out.print(n.id + " ");
             }
             out.println();
@@ -310,12 +296,29 @@ public class NNDescent {
 
     public static void main(String[] args) {
 
+        DirectoryReader reader;
+
         // Load index from disk:
-        setIndex(args[0]);
+        Directory directory = null;
+        try {
+            directory = FSDirectory.open(new File(args[0]));
+        } catch (IOException e) {
+            System.err.println("FATAL: Cannot open index file. Exiting");
+            return;
+        }
+
+        // Open the index:
+        try {
+            reader = DirectoryReader.open(directory);
+        } catch (IOException e) {
+            System.err.println("FATAL: Could not open the directory for reading. Exiting.");
+            return;
+        }
+
         File outputFile = new File(args[1]);
         int K = Integer.parseInt(args[2]);
 
-        List<Set<Neighbor>> neighbors = run(K);
+        List<FixedSizePriorityQueue<Neighbor>> neighbors = run(reader, K);
 
         try {
             writeResults(neighbors, outputFile, neighbors.size(), K);
