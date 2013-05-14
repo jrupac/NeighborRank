@@ -7,10 +7,14 @@ import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
 
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executors;
 
 /**
@@ -42,7 +46,6 @@ class ResultsHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        String uri = exchange.getRequestURI().getPath();
 
         Headers responseHeader = exchange.getResponseHeaders();
 
@@ -88,31 +91,31 @@ class ResultsHandler implements HttpHandler {
         List<Doc> luceneResults = Searcher.search(query, M);
 
         JSONArray resultsArray = new JSONArray();
+        Set<Integer> resultSet = new HashSet<Integer>();
 
         int totalResults = 0;
-        JSONObject docObj;
 
         for (Doc d : luceneResults) {
-            if (totalResults++ >= MAX_RESULTS) {
+            if (totalResults >= MAX_RESULTS) {
                 break;
             }
 
             // First display the result given by the vector model
-            docObj = new JSONObject();
-            docObj.put("docid", d.getId());
-            docObj.put("title", d.getTitle());
-            docObj.put("summary", d.getSummary());
-            resultsArray.add(docObj);
+            if (addResult(resultsArray, resultSet, d)) {
+                totalResults++;
+            }
 
             // Then show the nearest neighbors to that result
             List<Doc> neighbors = NNSearcher.getNeighbors(d.getId());
-            for (int i = 0; i < K && totalResults < MAX_RESULTS; i++, totalResults++) {
-                docObj = new JSONObject();
-                Doc n = neighbors.get(i);
-                docObj.put("docid", n.getId());
-                docObj.put("title", n.getTitle());
-                docObj.put("summary", n.getSummary());
-                resultsArray.add(docObj);
+
+            if (K > neighbors.size()) {
+                System.err.println("WARNING: Number of neighbors requested larger than computed");
+            }
+
+            for (int i = 0; i < K && i < neighbors.size() && totalResults < MAX_RESULTS; i++) {
+                if (addResult(resultsArray, resultSet, neighbors.get(i))) {
+                    totalResults++;
+                }
             }
         }
 
@@ -125,5 +128,19 @@ class ResultsHandler implements HttpHandler {
         exchange.sendResponseHeaders(200, content.length());
         response.write(content.getBytes());
         response.close();
+    }
+
+    private boolean addResult(JSONArray arr, Set<Integer> set, Doc d) {
+        if (set.contains(d.getId())) {
+            return false;
+        } else {
+            JSONObject docObj = new JSONObject();
+            docObj.put("docid", d.getId());
+            docObj.put("title", d.getTitle());
+            docObj.put("summary", d.getSummary());
+            arr.add(docObj);
+            set.add(d.getId());
+            return true;
+        }
     }
 }
