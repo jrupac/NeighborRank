@@ -1,0 +1,237 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 1in
+\topmargin 1in
+\rightmargin 1in
+\bottommargin 1in
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+NeighborRank: An analysis of hybrid ranking schemes
+\end_layout
+
+\begin_layout Author
+Rafi Shamim and Ajay Roopakalu
+\end_layout
+
+\begin_layout Section*
+Introduction
+\end_layout
+
+\begin_layout Standard
+\paragraph_spacing double
+Typically, modern-day search engines display results in descending order
+ by how well they match a user's search query.
+ This intuitively ought to produce the best possible results for a query.
+ However, given that a query is just a small collection of terms, it does
+ not and cannot encompass the full breadth of what a user actually intended
+ to search for.
+ That is to say, searching for documents solely based on a query can sometimes
+ be not distinguishing enough to produce a good full set of results.
+ In this project we explore the implications of combining a vector model
+ search of documents along with a secondary query that looks at the relative
+ structure differences between the highest ranking results and all other
+ documents in the corpus.
+ Using this modified approach, we are able to both get the documents which
+ directly correspond to a user's specifications as well as other documents
+ which are similar in content to them.
+ In this way, we are able to more abstractly approximate and capture what
+ a user actually intended to search for.
+ We were able to build a small working system that implemented this and
+ results indiciate that in many cases, more relevant documents appear higher
+ in the hybrid, two-stage ranking scheme as opposed to just the vector model
+ alone.
+\end_layout
+
+\begin_layout Section*
+Background
+\end_layout
+
+\begin_layout Subsection*
+Vector Model
+\end_layout
+
+\begin_layout Standard
+\paragraph_spacing double
+As mentioned in the previous section, one of the most common and simple
+ approaches to building a search engine is to employ the vector model.
+ In this case, we first begin by tokenizing the entire contents of the corpus.
+ This can be as simple as each word of each document in the corpus but can
+ be made more intelligent by selectively ignoring common words that exist
+ for grammatical structure as opposed to actual content.
+ Mathematically, this operation views each document as a vector in a very
+ high dimensional space where each dimension is a separate, distinct term
+ in the corpus and each dimension's value for a document's representation
+ in this model is the number of times that term appears in the document.
+ For example, for a corpus with 
+\begin_inset Formula $k$
+\end_inset
+
+ distinct terms, a document 
+\begin_inset Formula $d$
+\end_inset
+
+ may be represented by:
+\begin_inset Formula 
+\[
+d=(t_{1},t_{2},\ldots,t_{k})
+\]
+
+\end_inset
+
+For performance reasons, this model for document is pre-computed and stored
+ in some data structure that allows for fast querying.
+ The queries too are tokenized in the same way:
+\begin_inset Formula 
+\[
+q=\left(q_{1},q_{2},\ldots,q_{k}\right)
+\]
+
+\end_inset
+
+Note that the vast majority of 
+\begin_inset Formula $q_{1},\ldots,q_{k}$
+\end_inset
+
+ will be zero since a query only consists of a few terms.
+ Then, the ranking scheme follows the cosine model, where the ranking of
+ a document for a given query is defined by:
+\begin_inset Formula 
+\[
+\cos(\theta_{d,q})=\frac{d\cdot q}{\Vert d\Vert\Vert q\Vert}
+\]
+
+\end_inset
+
+In the above expression, 
+\begin_inset Formula $\langle\cdot\rangle$
+\end_inset
+
+ indicates the dot product of the two vectors and 
+\begin_inset Formula $\Vert\cdot\Vert$
+\end_inset
+
+ is the 
+\begin_inset Formula $L_{2}$
+\end_inset
+
+ norm.
+ We then display the search results back to the user in descending order
+ by 
+\begin_inset Formula $\cos(\theta_{d,q})$
+\end_inset
+
+ for each 
+\begin_inset Formula $d$
+\end_inset
+
+ in the corpus.
+\end_layout
+
+\begin_layout Subsection*
+\paragraph_spacing double
+Nearest Neighbor Model
+\end_layout
+
+\begin_layout Standard
+\paragraph_spacing double
+Our approach in this paper is to employ a similar notion of similarity to
+ capture the relationship between documents in the corpus.
+\end_layout
+
+\begin_layout Section*
+Design and Implementation
+\end_layout
+
+\begin_layout Standard
+sdf
+\end_layout
+
+\begin_layout Subsection*
+Apache Lucene
+\end_layout
+
+\begin_layout Standard
+sdf
+\end_layout
+
+\begin_layout Subsection*
+NN-Descent
+\end_layout
+
+\begin_layout Standard
+sdf
+\end_layout
+
+\begin_layout Section*
+Evaluation
+\end_layout
+
+\begin_layout Standard
+sdf
+\end_layout
+
+\begin_layout Section*
+Conclusion
+\end_layout
+
+\end_body
+\end_document
