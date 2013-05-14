@@ -63,7 +63,7 @@ div.title-info {
 .instructions {
 	font-size: 24px;
 	font-weight: 700;
-	width: 50%;
+	width: 45%;
 	margin: 0 auto;
 	text-align: center;
 }
@@ -75,19 +75,34 @@ div.title-info {
 	padding-bottom: 10px;
 }
 
-.table td.select {
+.select {
 	width: 20px;
 	vertical-align: middle;
+	padding-right: 10px;
 }
 
 .result {
 	color: black;
 }
 
-.result-title {
+.accordion-toggle {
+    display: inline!important;
 	color: #333;
 	font-size: 16px;
 	font-weight: 700;
+	vertical-align: middle;
+	padding: 0!important;
+}
+
+.accordion {
+    width: 45%;
+    float: left;
+    margin: 10px;
+}
+
+.accordion-heading {
+    padding: 3px;
+    border: 1px solid #DDD;
 }
 
 .result-summary {
@@ -103,6 +118,12 @@ div.title-info {
     margin: 0 auto;
 }
 
+.search-heading {
+    color: black;
+    font-size: 18px;
+    text-align: center;
+}
+
 .table-comparison-header {
     text-align: center;
     color: black;
@@ -111,13 +132,32 @@ div.title-info {
     padding-bottom: 10px;
 }
 
-
 .table-comparison {
     float: left;
-    width: 32%;
+    width: 30%;
     margin: 10px;
 }
 
 .relevant {
     background-color: lightBlue;
+}
+
+.search-heading h3 {
+    width: 100%;
+    color: black;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+p.data-attribute {
+    font-weight: 700;
+    text-align: right;
+}
+
+p.data-value {
+    text-align: left;
+}
+
+.search-heading p {
+    font-size: 14px;
 }

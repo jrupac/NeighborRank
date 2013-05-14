@@ -1,8 +1,22 @@
 App = Ember.Application.create({
 	LOG_TRANSITIONS: true,
-	comparing: false,
-	relevant: new Ember.Set(),
+	relevant: new Em.Set(),
+	itemMap: new Em.Map(),
 });
+
+updateStats = function() {
+    $('#vm-rec').text(' ' + App.FullLuceneResultsController.recall());
+    $('#vm-prec').text(App.FullLuceneResultsController.precision());
+    $('#vm-dcg').text(App.FullLuceneResultsController.dcg());
+    $('#vm-fscore').text(App.FullLuceneResultsController.fscore());
+    $('#vm-reciprank').text(App.FullLuceneResultsController.reciprank());
+
+    $('#hm-rec').text(App.MixedResultsController.recall());
+    $('#hm-prec').text(App.MixedResultsController.precision());
+    $('#hm-dcg').text(App.MixedResultsController.dcg());
+    $('#hm-fscore').text(App.MixedResultsController.fscore());
+    $('#hm-reciprank').text(App.MixedResultsController.reciprank());
+}
 
 Ember.TextSupport.reopen({
   attributeBindings: ["autofocus", "class", "id"]
@@ -12,7 +26,11 @@ App.Searchbox = Ember.TextField.extend({
 	placeholder: "Type your query (quantum, algorithms, ...)",
 	id: "appendedInputButton",
 	type: "text",
-	autofocus: "autofocus"
+	autofocus: "autofocus",
+	insertNewline: function() {
+	    console.log("newline!");
+        this.get('controller').doSearch()
+	}
 });
 
 // Result model
@@ -20,141 +38,154 @@ App.Result = Ember.Object.extend({
     docid: null,
     title: null,
     summary: null,
-    relevanceClass: function() {
-        if (App.relevant.contains(this.docid)) {
-            return 'relevant';
-        } else {
-            return null;
-        }
-    }.property(this.docid)
+    tableName: null,
+    slug: function() {
+        return this.get('tableName') + '-' + this.get('docid')
+    }.property('docid', 'tableName').cacheable(),
+    href: function() {
+        return '#' + this.get('slug')
+    }.property('slug').cacheable(),
+    relevanceClass: null
 });
 
 App.ResultsController = Ember.ArrayController.extend({
-    query: function(query, K, M) {
+    addRelevance: function(id) {
+        if (this.contentMap.has(id)) {
+            this.contentMap.get(id).set('relevanceClass', 'relevant');
+        }
+    },
+    removeRelevance: function(id) {
+       if (this.contentMap.has(id)) {
+            this.contentMap.get(id).set('relevanceClass', null);
+        }
+    },
+    query: function(query, K) {
         if (query === undefined) { return; }
+        console.log("fetching...");
         _this = this;
 	    $.post(
 	        "http://localhost:8080/results/",
-	        JSON.stringify({'query': query, 'K': K, 'M': M}),
+	        JSON.stringify({'query': query, 'K': this.K || K, 'M': this.M}),
 	        this.process,
 	        'json')
 	     .fail(this.fail);
     },
     fail: function(x, y) {
         console.log('here');
-    }
+    },
+    precision: function() {
+        inter = 0.0 + this.get('content').filter(function(item, index, e) {
+            return App.relevant.contains(item.docid);
+        }).get('length');
+
+        return inter / this.get('content').get('length');
+    },
+    recall: function() {
+        inter = 0.0 + this.get('content').filter(function(item, index, e) {
+            return App.relevant.contains(item.docid);
+        }).get('length');
+
+        return inter / App.relevant.length;
+    },
+    dcg: function() {
+        val = 0.0;
+        this.get('content').forEach(function(item, index, e) {
+            if (App.relevant.contains(item.docid)) {
+                val += 1.0 / Math.log(index + 2);
+            }
+        });
+        return val;
+    },
+    fscore: function() {
+        r = this.recall();
+        p = this.precision();
+        return (2.0 * r * p) / (r + p);
+    },
+    reciprank: function() {
+        idx = 0;
+        this.get('content').find(function(item, index, e) {
+            if (App.relevant.contains(item.docid)) {
+                idx = index + 1;
+                return true;
+            } else {
+                return false;
+            }
+        });
+        return 1.0 / idx;
+    },
 });
 
 App.FullLuceneResultsController = App.ResultsController.create({
     content: [],
+    contentMap: Em.Map.create(),
     K: 0,
-    M: 10,
+    M: 30,
     process: function(response) {
         App.FullLuceneResultsController.clear();
-        console.log(response);
+        i = 0;
         response.results.forEach(function(child) {
-            App.FullLuceneResultsController.pushObject(App.Result.create(child));
+            newResult = App.Result.create(child);
+            newResult.set('tableName', 'lucene' + i);
+            i++;
+            App.FullLuceneResultsController.pushObject(newResult);
+            App.FullLuceneResultsController.contentMap.set(child.docid, newResult);
         })
     }
 });
 
 App.MixedResultsController = App.ResultsController.create({
     content: [],
-    K: 5,
-    M: 2,
+    contentMap: Em.Map.create(),
+    K: null,
+    M: 30,
     process: function(response) {
-        console.log(this);
         App.MixedResultsController.clear();
+        i = 0;
         response.results.forEach(function(child) {
-            App.MixedResultsController.pushObject(App.Result.create(child));
+            newResult = App.Result.create(child);
+            newResult.set('tableName', 'mix' + i);
+            i++;
+            App.MixedResultsController.pushObject(newResult);
+            App.MixedResultsController.contentMap.set(child.docid, newResult);
         })
     }
 });
-
-App.FullNNResultsController = App.ResultsController.create({
-    content: [],
-    K: 9,
-    M: 1,
-    process: function(response) {
-        App.FullNNResultsController.clear();
-        response.results.forEach(function(child) {
-            App.FullNNResultsController.pushObject(App.Result.create(child));
-        })
-    }
-});
-
-//
-//App.Result.FIXTURES = [
-//    {
-//    id: 10,
-//    docid: 1,
-//    title: 'An analogue of the Szemeredi Regularity Lemma for bounded degree graphs',
-//    summary: 'We show that a sufficiently large graph of bounded degree can be decomposed into quasi-homogeneous pieces. The result can be viewed as a "finitarization" of the classical Farrell-Varadarajan Ergodic Decomposition Theorem.',
-//    },
-//    {
-//    id: 11,
-//    docid: 2,
-//    title: 'Drift-diffusion model for spin-polarized transport in a non-degenerate 2DEG controlled by a spin-orbit interaction',
-//    summary: 'We apply the Wigner function formalism to derive drift-diffusion transport equations for spin-polarized electrons in a III-V semiconductor single quantum well. Electron spin dynamics is controlled by the linear in momentum spin-orbit interaction. In a studied transport regime an electron momentum scattering rate is appreciably faster than spin dynamics. A set of transport equations is defined in terms of a particle density, spin density, and respective fluxes. The developed model allows studying of coherent dynamics of a non-equilibrium spin polarization. As an example, we consider a stationary transport regime for a heterostructure grown along the (0, 0, 1) crystallographic direction. Due to the interplay of the Rashba and Dresselhaus spin-orbit terms spin dynamics strongly depends on a transport direction. The model is consistent with results of pulse-probe measurement of spin coherence in strained semiconductor layers. It can be useful for studying properties of spin-polarized transport and modeling of spintronic devices operating in the diffusive transport regime.',
-//    },
-//    {
-//    id: 12,
-//    docid: 3,
-//    title: 'Optical conductivity of a quasi-one-dimensional system with fluctuating order',
-//    summary: 'We describe a formally exact method to calculate the optical conductivity of a one-dimensional system with fluctuating order. For classical phase fluctuations we explicitly determine the optical conductivity by solving two coupled Fokker-Planck equations numerically. Our results differ considerably from perturbation theory and in contrast to Gaussian order parameter fluctuations show a strong dependence on the correlation length.',
-//    }
-//];
 
 App.Router.map(function() {
     this.route('index', { path: '/'});
 });
 
-
-App.ResultsCollectionView = Ember.CollectionView.extend({
-    itemViewClass: Ember.View.extend({
-        relevanceClass: function() {
-            if (App.relevant.contains(this.get('content.docid'))) {
-                return 'relevant';
-            } else { return null; }
-        }.property('content.docid')
-    })
-});
-
-
 App.IndexView = Ember.View.extend({
-    resultCheckbox: Ember.Checkbox.extend({
-        checked: false,
-        checkedObserver: function(x, y) {
-            item = this.get('content');
-            this.get('controller').toggleRelevance(item.get('docid'))
-        }.observes('checked')
-    })
+	dcg: function() {
+	    console.log('i fired too' + this.get('controller.dcg'));
+	    return this.get('controller.dcg')
+	}.observes('controller.dcg').property()
 });
 
 App.IndexController = Ember.Controller.extend({
 	query: '',
-	toggleRelevance: function(id) {
-        rels = App.get('relevant');
-        if (rels.contains(id)) {
-            rels.remove(id);
-        } else {
+	toggleRelevance: function(item) {
+        rels = App.relevant;
+        id = item.get('docid');
+
+        if (!rels.contains(id)) {
             rels.add(id);
+            App.FullLuceneResultsController.addRelevance(id);
+            App.MixedResultsController.addRelevance(id);
+        } else {
+            rels.remove(id);
+            App.FullLuceneResultsController.removeRelevance(id);
+            App.MixedResultsController.removeRelevance(id);
         }
 	},
 	doSearch: function() {
-	    console.log("getting stuff... for " + this.query);
-	    App.FullLuceneResultsController.query(this.query,
-	        App.FullLuceneResultsController.K,
-	        App.FullLuceneResultsController.M);
+	    App.FullLuceneResultsController.query(this.query);
+	    App.MixedResultsController.query(this.query, $('#k-value').val());
+	    updateStats();
+	    $('.data-table').css('display', 'none');
 	},
-	doComparison: function() {
-	    console.log("doing comparison...");
-	    App.FullNNResultsController.query(this.query,
-	        App.FullNNResultsController.K,
-	        App.FullNNResultsController.M);
-	    App.MixedResultsController.query(this.query,
-	        App.MixedResultsController.K,
-	        App.MixedResultsController.M);
-	    App.set('comparing', true);
+	computeStats: function() {
+	    updateStats();
+	    $('.data-table').css('display', 'inline');
 	}
 });

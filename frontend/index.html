@@ -32,94 +32,189 @@
 <script type="text/x-handlebars" data-template-name="index">
 
     <div class="search-box">
-        <div class="input-append">
+        <div class="input-prepend input-append">
+            <label>Select the number of neighbors to use in the hybrid ranking and type a query</label>
+            <select id="k-value" style="width:50px">
+                <option>0</option>
+                <option>1</option>
+                <option selected="selected">2</option>
+                <option>3</option>
+                <option>4</option>
+                <option>5</option>
+                <option>6</option>
+                <option>7</option>
+                <option>8</option>
+                <option>9</option>
+                <option>10</option>
+            </select>
             {{view App.Searchbox valueBinding="query" class="span6"}}
             <button class="btn btn-inverse" type="button"
             {{action "doSearch"}}>Search</button>
         </div>
     </div>
 
-
     {{#if App.FullLuceneResultsController}}
-    <div class="alert alert-info instructions">
-        Select the results below which you find relevant:
-    </div>
-
-    <div class="search-results">
-        <table class="table table-hover">
-            {{#each item in App.FullLuceneResultsController}}
-            <tr class="result">
-                <td class="select">
-                    {{view view.resultCheckbox
-                    contentBinding="item"
-                    controllerBinding="this"
-                    checkedBinding="index.view.checked"}}
-                </td>
-                <td>
-                    <p class="result-title">{{item.title}}</p>
-
-                    <p class="result-summary">{{item.summary}}</p>
-
-                </td>
-            </tr>
-            {{/each}}
-        </table>
-        <div style="margin:auto; text-align:right">
-            <button class="btn btn-medium btn-inverse" type="button"
-            {{action "doComparison"}}>
-            Compare with NN-Descent &rarr;
-            </button>
+    <a {{action "computeStats"}}>
+        <div class="alert alert-info alert-block instructions" >
+        Star the relevant results below, then click here
+        <p style="font-size:16px">Click on a result to expand</p>
         </div>
-    </div>
-    {{/if}}
-
-    {{#if App.comparing}}
-    <div class="alert alert-info instructions" style="margin-top: 20px">
-        K is the number of nearest neighbors expanded in each vector model result.
-    </div>
+    </a>
 
     <div class="search-comparison-results">
-        <div class="table-comparison">
-        <div class=table-comparison-header>K={{App.FullLuceneResultsController.K}}</div>
-        <table class="table">
-            {{#each item in App.FullLuceneResultsController}}
-            <tr {{bindAttr class=":result item.relevanceClass"}}>
-            <td>
-                <p class="result-title">{{item.title}}</p>
-                <p class="result-summary">{{item.summary}}</p>
-            </td>
-            </tr>
-            {{/each}}
-        </table>
+        <div class="accordion" id="accordion1">
+            <div class="search-heading">
+                <h3>Vector Model</h3>
+                <table class="data-table table" style="display:none">
+                <tr>
+                    <td>
+                        <p class='data-attribute'>Recall at Rank 30</p>
+                    </td>
+                    <td>
+                        <p id="vm-rec" class='data-value'></p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p class='data-attribute'>Precision at Rank 30</p>
+                    </td>
+                    <td>
+                        <p id="vm-prec" class='data-value'></p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p class='data-attribute'>DCG</p>
+                    </td>
+                    <td>
+                        <p id="vm-dcg" class='data-value'></p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p class='data-attribute'>F-Score</p>
+                    </td>
+                    <td>
+                        <p id="vm-fscore" class='data-value'></p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p class='data-attribute'>Reciprocal Rank</p>
+                    </td>
+                    <td>
+                        <p id="vm-reciprank" class='data-value'></p>
+                    </td>
+                </tr>
+                </table>
+            </div>
+            <div class="accordion-group">
+                {{#each item in App.FullLuceneResultsController}}
+                <div {{bindAttr class=":accordion-heading item.relevanceClass"}}>
+                    <table>
+                    <tr>
+                    <td class="select">
+                        <div style="vertical-align:middle">
+                        <button class="btn" {{action "toggleRelevance" item}}>
+                            <i class="icon-star"></i>
+                        </button>
+                        </div>
+
+                    </td>
+                    <td>
+                    <div class="accordion-toggle" data-toggle="collapse" data-parent="#accordion1"
+                       {{bindAttr href="item.href"}}>
+                        {{item.title}}
+                    </div>
+                    </td>
+                    </tr>
+                    </table>
+                </div>
+                <div {{bindAttr id="item.slug"}} class="accordion-body collapse">
+                    <div class="result-summary accordion-inner">
+                        {{item.summary}}
+                    </div>
+                </div>
+                {{/each}}
+            </div>
         </div>
 
-        <div class="table-comparison">
-        <div class=table-comparison-header>K={{App.MixedResultsController.K}}</div>
-        <table class="table">
-            {{#each item in App.MixedResultsController}}
-            <tr {{bindAttr class=":result item.relevanceClass"}}>
-            <td>
-                <p class="result-title">{{item.title}}</p>
-                <p class="result-summary">{{item.summary}}</p>
-            </td>
-            </tr>
+        {{#if App.MixedResultsController}}
+        <div class="accordion" id="accordion2">
+            <div class="search-heading">
+                <h3>Hybrid of Vector/Neighbor Model</h3>
+                <table class="data-table table" style="display:none">
+                    <tr>
+                        <td>
+                            <p class='data-attribute'>Recall at Rank 30</p>
+                        </td>
+                        <td>
+                            <p id="hm-rec" class='data-value'></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <p class='data-attribute'>Precision at Rank 30</p>
+                        </td>
+                        <td>
+                            <p id="hm-prec" class='data-value'></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <p class='data-attribute'>DCG</p>
+                        </td>
+                        <td>
+                            <p id="hm-dcg" class='data-value'></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <p class='data-attribute'>F-Score</p>
+                        </td>
+                        <td>
+                            <p id="hm-fscore" class='data-value'></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <p class='data-attribute'>Reciprocal Rank</p>
+                        </td>
+                        <td>
+                            <p id="hm-reciprank" class='data-value'></p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="accordion-group">
+                {{#each item in App.MixedResultsController}}
+                <div {{bindAttr class=":accordion-heading item.relevanceClass"}}>
+                    <table>
+                    <tr>
+                    <td class="select">
+                        <div style="vertical-align:middle">
+                        <button class="btn" {{action "toggleRelevance" item}}>
+                        <i class="icon-star"></i>
+                        </button>
+                        </div>
+                    </td>
+                    <td>
+                    <div class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2"
+                    {{bindAttr href="item.href"}}>
+                    {{item.title}}
+                    </div>
+                    </td>
+                    </tr>
+                    </table>
+                </div>
+                <div {{bindAttr id="item.slug"}} class="accordion-body collapse">
+                    <div class="result-summary accordion-inner">
+                        {{item.summary}}
+                    </div>
+                </div>
             {{/each}}
-        </table>
         </div>
-
-        <div class="table-comparison">
-        <div class=table-comparison-header>K={{App.FullNNResultsController.K}}</div>
-        <table class="table">
-            {{#each item in App.FullNNResultsController}}
-            <tr {{bindAttr class=":result item.relevanceClass"}}>
-            <td>
-                <p class="result-title">{{item.title}}</p>
-                <p class="result-summary">{{item.summary}}</p>
-            </td>
-            </tr>
-            {{/each}}
-        </table>
-        </div>
+        {{/if}}
     </div>
     {{/if}}
 
